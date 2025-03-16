@@ -3,17 +3,26 @@ import { useGameStore } from '../store/gameStore';
 import RuneCard from './RuneCard';
 
 const RuneCollection: React.FC = () => {
-  const { runes } = useGameStore();
+  const { runes, getActiveRunesCount, maxActiveRunes } = useGameStore();
   const [filter, setFilter] = useState<string>('all');
   
   const filteredRunes = runes.filter(rune => {
     if (filter === 'all') return true;
+    if (filter === 'active') return rune.active;
+    if (filter === 'inactive') return !rune.active;
     return rune.rarity === filter;
   });
   
+  const activeRunesCount = getActiveRunesCount();
+  
   return (
     <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
-      <h2 className="text-xl font-bold text-white mb-4">Rune Collection</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-white">Rune Collection</h2>
+        <div className="text-sm text-gray-400">
+          <span className="text-indigo-400 font-semibold">{activeRunesCount}</span>/{maxActiveRunes} Active
+        </div>
+      </div>
       
       <div className="flex flex-wrap gap-2 mb-6">
         <button
@@ -23,6 +32,22 @@ const RuneCollection: React.FC = () => {
           onClick={() => setFilter('all')}
         >
           All
+        </button>
+        <button
+          className={`px-3 py-1 rounded-md text-sm ${
+            filter === 'active' ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-300'
+          }`}
+          onClick={() => setFilter('active')}
+        >
+          Active
+        </button>
+        <button
+          className={`px-3 py-1 rounded-md text-sm ${
+            filter === 'inactive' ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-300'
+          }`}
+          onClick={() => setFilter('inactive')}
+        >
+          Inactive
         </button>
         <button
           className={`px-3 py-1 rounded-md text-sm ${

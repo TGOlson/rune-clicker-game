@@ -4,7 +4,16 @@
 
 @layer components {
   .rune-card {
-    @apply bg-gray-800 rounded-lg p-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105;
+    @apply bg-gray-800 rounded-lg p-4 shadow-lg transition-all duration-300 hover:shadow-xl;
+  }
+  
+  .rune-card.active {
+    @apply border-2 border-indigo-500 bg-gray-900;
+  }
+  
+  .active-rune-mini {
+    @apply bg-gray-800 p-2 rounded border transition-all duration-200 text-center flex flex-col justify-between;
+    min-height: 70px;
   }
   
   .btn {
@@ -26,4 +35,21 @@
   .btn-danger {
     @apply btn bg-red-600 text-white hover:bg-red-700;
   }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-indigo-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-indigo-700;
 }

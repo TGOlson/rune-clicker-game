@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { startGameLoop } from './store/gameStore'
-import Dashboard from './components/Dashboard'
 import RuneCollection from './components/RuneCollection'
 import GambleSection from './components/GambleSection'
 import SoundEffects from './components/SoundEffects'
+import ActiveRunesPanel from './components/ActiveRunesPanel'
 
 function App() {
   // Start the game loop when the app loads
@@ -22,14 +22,18 @@ function App() {
         <p className="text-gray-400">Collect runes, increase your points, and gamble for rare finds!</p>
       </header>
       
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-6">
-          <Dashboard />
-          <GambleSection />
-        </div>
+      <div className="max-w-7xl mx-auto">
+        {/* Active Runes Panel - replaces Dashboard */}
+        <ActiveRunesPanel />
         
-        <div className="lg:col-span-2">
-          <RuneCollection />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <GambleSection />
+          </div>
+          
+          <div className="lg:col-span-2">
+            <RuneCollection />
+          </div>
         </div>
       </div>
       

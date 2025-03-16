@@ -15,6 +15,7 @@ export interface Rune {
   image: string;
   owned: boolean;
   isRandom: boolean;
+  active: boolean; // Whether the rune is currently active
 }
 
 // Define game state
@@ -26,12 +27,16 @@ interface GameState {
   runes: Rune[];
   lastUpdate: number;
   runeIdCounter: number; // Counter for generating unique IDs for random runes
+  maxActiveRunes: number; // Maximum number of runes that can be active at once
   
   // Actions
   incrementPoints: () => void;
   gamblePurchase: (amount: number) => void;
+  toggleRuneActive: (runeId: string) => void; // Toggle a rune's active status
   update: () => void;
   reset: () => void;
+  getActiveRunes: () => Rune[]; // Get all active runes
+  getActiveRunesCount: () => number; // Get count of active runes
 }
 
 // Helper function to generate random rune attributes based on rarity
@@ -142,12 +147,32 @@ const generateRandomRune = (rarity: RuneRarity, id: number): Rune => {
     image: rarityImages[rarity],
     owned: true, // Automatically owned when created through gambling
     isRandom: true,
+    active: true, // New runes are active by default if there's room
   };
+};
+
+// Helper function to recalculate total stats based on active runes
+const calculateTotalStats = (runes: Rune[]) => {
+  const activeRunes = runes.filter(rune => rune.active);
+  
+  let totalPointsPerSecond = 0;
+  let totalTimeMultiplier = 1;
+  
+  activeRunes.forEach(rune => {
+    totalPointsPerSecond += rune.pointsPerSecond;
+    totalTimeMultiplier *= rune.timeMultiplier;
+  });
+  
+  // Round to 2 decimal places
+  totalPointsPerSecond = Math.round(totalPointsPerSecond * 100) / 100;
+  totalTimeMultiplier = Math.round(totalTimeMultiplier * 100) / 100;
+  
+  return { totalPointsPerSecond, totalTimeMultiplier };
 };
 
 // Create the store
 export const useGameStore = create<GameState>()(
-  immer((set) => ({
+  immer((set, get) => ({
     points: 0, // Start with 0 points so players need to click to earn their first gambling opportunity
     pointsPerClick: 1,
     pointsPerSecond: 0,
@@ -155,6 +180,7 @@ export const useGameStore = create<GameState>()(
     runes: [], // Start with no runes
     lastUpdate: Date.now(),
     runeIdCounter: 0,
+    maxActiveRunes: 12, // Maximum number of active runes
     
     incrementPoints: () => {
       set((state) => {
@@ -196,12 +222,17 @@ export const useGameStore = create<GameState>()(
           // Generate a random rune with the selected rarity
           const newRune = generateRandomRune(selectedRarity, state.runeIdCounter++);
           
+          // Check if we can activate this rune
+          const activeRunesCount = state.runes.filter(rune => rune.active).length;
+          newRune.active = activeRunesCount < state.maxActiveRunes;
+          
           // Add the new rune to the collection
           state.runes.push(newRune);
           
-          // Update player stats
-          state.pointsPerSecond += newRune.pointsPerSecond;
-          state.timeMultiplier *= newRune.timeMultiplier;
+          // Update player stats based on active runes
+          const { totalPointsPerSecond, totalTimeMultiplier } = calculateTotalStats(state.runes);
+          state.pointsPerSecond = totalPointsPerSecond;
+          state.timeMultiplier = totalTimeMultiplier;
           
           // Dispatch a custom event for the UI to show the new rune
           window.dispatchEvent(new CustomEvent('rune-acquired', { 
@@ -209,6 +240,40 @@ export const useGameStore = create<GameState>()(
           }));
         }
       });
+    },
+    
+    toggleRuneActive: (runeId: string) => {
+      set((state) => {
+        const runeIndex = state.runes.findIndex(rune => rune.id === runeId);
+        
+        if (runeIndex !== -1) {
+          const rune = state.runes[runeIndex];
+          const activeRunesCount = state.runes.filter(rune => rune.active).length;
+          
+          // If trying to activate and we're at the limit, don't allow it
+          if (!rune.active && activeRunesCount >= state.maxActiveRunes) {
+            // Dispatch an event to notify the user
+            window.dispatchEvent(new CustomEvent('max-active-runes-reached'));
+            return;
+          }
+          
+          // Toggle the active status
+          state.runes[runeIndex].active = !state.runes[runeIndex].active;
+          
+          // Recalculate stats
+          const { totalPointsPerSecond, totalTimeMultiplier } = calculateTotalStats(state.runes);
+          state.pointsPerSecond = totalPointsPerSecond;
+          state.timeMultiplier = totalTimeMultiplier;
+        }
+      });
+    },
+    
+    getActiveRunes: () => {
+      return get().runes.filter(rune => rune.active);
+    },
+    
+    getActiveRunesCount: () => {
+      return get().runes.filter(rune => rune.active).length;
     },
     
     update: () => {
@@ -231,6 +296,7 @@ export const useGameStore = create<GameState>()(
         runes: [], // Reset to no runes
         lastUpdate: Date.now(),
         runeIdCounter: 0,
+        maxActiveRunes: 12,
       });
     },
   }))

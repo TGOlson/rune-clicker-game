@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Rune } from '../store/gameStore';
+import { Rune, useGameStore } from '../store/gameStore';
 
 interface RuneCardProps {
   rune: Rune;
@@ -25,14 +25,23 @@ const rarityTextColors = {
 };
 
 const RuneCard: React.FC<RuneCardProps> = ({ rune }) => {
+  const { toggleRuneActive, getActiveRunesCount, maxActiveRunes } = useGameStore();
+  
   // Format the rarity text with proper capitalization
   const formatRarity = (rarity: string) => {
     return rarity.charAt(0).toUpperCase() + rarity.slice(1);
   };
   
+  const handleToggleActive = () => {
+    toggleRuneActive(rune.id);
+  };
+  
+  const activeRunesCount = getActiveRunesCount();
+  const canActivate = rune.active || activeRunesCount < maxActiveRunes;
+  
   return (
     <motion.div
-      className="rune-card bg-gray-900"
+      className={`rune-card ${rune.active ? 'active' : ''}`}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       initial={{ opacity: 0, y: 20 }}
@@ -66,9 +75,19 @@ const RuneCard: React.FC<RuneCardProps> = ({ rune }) => {
         )}
       </div>
       
-      <div className="mt-4 text-center py-2 bg-gray-700 rounded-md text-yellow-400 font-medium">
-        Active
-      </div>
+      <button
+        onClick={handleToggleActive}
+        disabled={!canActivate && !rune.active}
+        className={`mt-4 w-full text-center py-2 rounded-md font-medium transition-colors ${
+          rune.active
+            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+            : canActivate
+              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+        }`}
+      >
+        {rune.active ? 'Active' : canActivate ? 'Activate' : `Max ${maxActiveRunes} Active`}
+      </button>
     </motion.div>
   );
 };
